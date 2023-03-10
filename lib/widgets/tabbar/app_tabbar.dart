@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mizar_music_app/common/index.dart';
+import 'package:mizar_music_app/utils/logger_helper.dart';
+import 'package:mizar_music_app/utils/table_helper.dart';
 
 import '../index.dart';
 
@@ -29,12 +31,20 @@ class _AppTabbarWidgetState extends State<AppTabbarWidget> {
   void initState() {
     super.initState();
     _controller = PageController(initialPage: _currentIndex);
+    // init logger
+    LoggerHelper().initLogger();
+    // init db
+    _initDatabase();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  _initDatabase() async {
+    await TableHelper().init();
   }
 
   Widget _buildMainView() {

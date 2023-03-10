@@ -32,7 +32,7 @@ class _SkinPageState extends State<SkinPage> {
           )
         ],
       ),
-      body: Text("hello"),
+      body: const Text("hello"),
     );
   }
 }
