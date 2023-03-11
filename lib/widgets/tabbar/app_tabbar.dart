@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mizar_music_app/common/index.dart';
-import 'package:mizar_music_app/utils/logger_helper.dart';
-import 'package:mizar_music_app/utils/table_helper.dart';
 
+import '../../common/index.dart';
+import '../../utils/index.dart';
 import '../index.dart';
 
 class AppTabbarWidget extends StatefulWidget {
@@ -13,6 +12,7 @@ class AppTabbarWidget extends StatefulWidget {
 }
 
 class _AppTabbarWidgetState extends State<AppTabbarWidget> {
+  // late StreamSubscription _sub;
   late PageController _controller;
   int _currentIndex = 1;
 
@@ -31,8 +31,6 @@ class _AppTabbarWidgetState extends State<AppTabbarWidget> {
   void initState() {
     super.initState();
     _controller = PageController(initialPage: _currentIndex);
-    // init logger
-    LoggerHelper().initLogger();
     // init db
     _initDatabase();
   }
@@ -40,6 +38,7 @@ class _AppTabbarWidgetState extends State<AppTabbarWidget> {
   @override
   void dispose() {
     _controller.dispose();
+    // _sub.cancel();
     super.dispose();
   }
 
@@ -49,11 +48,6 @@ class _AppTabbarWidgetState extends State<AppTabbarWidget> {
 
   Widget _buildMainView() {
     return Scaffold(
-      // appBar: AppBar(
-      //   backgroundColor: AppColors.backgroundColor,
-      //   title: Text(bottomBarConfigs[_currentIndex]['label'], style: const TextStyle(color: AppColors.titleColor)),
-      //   elevation: 0,
-      // ),
       body: PageView(
         controller: _controller,
         physics: const NeverScrollableScrollPhysics(), // 禁止左右滚动

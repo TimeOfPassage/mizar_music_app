@@ -35,6 +35,9 @@ dependencies:
   sqflite: 2.2.5
   # 日志
   logger: 1.2.2
+  # 运行指定应用
+  url_launcher: ^6.1.10
+
 
 
   # The following adds the Cupertino Icons font to your application.

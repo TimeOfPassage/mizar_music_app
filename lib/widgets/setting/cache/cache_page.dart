@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mizar_music_app/utils/index.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../common/index.dart';
+import '../../../entity/baidu_config.dart';
 
 class CachePage extends StatefulWidget {
   const CachePage({super.key});
@@ -9,7 +13,77 @@ class CachePage extends StatefulWidget {
   State<CachePage> createState() => _CachePageState();
 }
 
-class _CachePageState extends State<CachePage> {
+class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    // LoggerHelper.i("active...$state");
+    if (state == AppLifecycleState.resumed) {
+      // 读取剪贴板数据
+      ClipboardData? clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+      if (clipboard == null) {
+        return;
+      }
+      // https://openapi.baidu.com/oauth/2.0/login_success#expires_in=2592000&access_token=123.e3d84b8ea407f68cb2c9488254e9b26a.YB9S4Ba5ZApAc-LMuXaEaH8tq-yH00Yr6rbCjKx.l9USDQ&session_secret=&session_key=&scope=basic+netdisk
+      String url = clipboard.text.toString();
+      if (url.startsWith("https://openapi.baidu.com/oauth/2.0/login_success")) {
+        // var uri = Uri.parse(url);
+        List<String> authInfos = url.split("#")[1].toString().split("&");
+        var bc = BaiduConfigEntity();
+        for (var e in authInfos) {
+          List<String> arr = e.split("=");
+          if ("expires_in" == arr[0].trim()) {
+            bc.expiresIn = int.parse(arr[1]);
+          }
+          if ("access_token" == arr[0].trim()) {
+            bc.accessToken = arr[1];
+          }
+          if ("session_secret" == arr[0].trim()) {
+            bc.sessionSecret = arr[1];
+          }
+          if ("session_key" == arr[0].trim()) {
+            bc.sessionKey = arr[1];
+          }
+          if ("scope" == arr[0].trim()) {
+            bc.scope = arr[1];
+          }
+        }
+        await TableHelper.open();
+        String existSql = "select * from baidu_config";
+        List<Map<dynamic, dynamic>> results = await TableHelper.query(existSql);
+        if (results.isNotEmpty) {
+          Map<dynamic, dynamic> res = results[0];
+          // 如果
+          // debugPrint(res.toString());
+          int lastStoreTime = int.parse(res['store_time'].toString());
+          int expireIn = int.parse(res['expires_in'].toString());
+          int now = DateTime.now().millisecondsSinceEpoch;
+          if (now - lastStoreTime > (expireIn * 1000)) {
+            String updateSql = '''UPDATE "baidu_config" SET "access_token" = ?, "expires_in" = ?, "session_secret" = ?, "session_key" = ?, "scope" = ?, "store_time" = ? WHERE "id" = ?;''';
+            await TableHelper.update(updateSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, now, res['id']]);
+          }
+        } else {
+          bc.storeTime = DateTime.now().millisecondsSinceEpoch;
+          String insertSql = '''INSERT INTO "baidu_config" ( "access_token", "expires_in", "session_secret", "session_key", "scope", "store_time" ) VALUES ( ?, ?, ?, ?, ?, ?);''';
+          await TableHelper.insert(insertSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, bc.storeTime]);
+        }
+        LoggerHelper.i(results.length);
+        await TableHelper.close();
+      }
+    }
+  }
+
   Widget _buildMainView() {
     return Scaffold(
       appBar: AppBar(
@@ -35,8 +109,11 @@ class _CachePageState extends State<CachePage> {
         _buildSettingItemInfoView(
           title: "百度云配置",
           icon: AppIcons.baidu,
-          onTap: () => {
-            // Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CachePage())),
+          onTap: () async {
+            bool isOpenUrlSuccess = await launchUrl(Uri.parse(kBaiduAuthorizationUrl), mode: LaunchMode.externalApplication);
+            if (!isOpenUrlSuccess) {
+              await launchUrl(Uri.parse(kBaiduAuthorizationUrl), mode: LaunchMode.externalApplication);
+            }
           },
         ),
       ]),
