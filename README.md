@@ -2,15 +2,13 @@
 
 A new Flutter project.
 
-## Getting Started
+## 效果图
 
-This project is a starting point for a Flutter application.
+这是进入应用首页
 
-A few resources to get you started if this is your first Flutter project:
+![music_home](./demo/music_home.png)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+设置页面
+
+![setting](./demo/music_setting.png)

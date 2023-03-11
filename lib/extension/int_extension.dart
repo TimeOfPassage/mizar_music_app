@@ -21,14 +21,14 @@ extension IntExtension on int {
       if (remainMinutes == 0) {
         return "$hours小时$remainSeconds秒";
       }
-      return "$hours小时$remainMinutes分钟$remainMinutes分钟";
+      return "$hours小时$remainMinutes分钟$remainSeconds秒";
     }
     int remainHours = days % 24;
     if (remainSeconds == 0) {
-      return "$days天$hours小时$remainMinutes分钟";
+      return "$days天$remainHours小时$remainMinutes分钟";
     }
     if (remainMinutes == 0) {
-      return "$days天$hours小时$remainSeconds秒";
+      return "$days天$remainHours小时$remainSeconds秒";
     }
     if (remainHours == 0) {
       return "$days天$remainMinutes分钟$remainSeconds秒";

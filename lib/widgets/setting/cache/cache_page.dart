@@ -16,6 +16,7 @@ class CachePage extends StatefulWidget {
 
 class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
   String? nextUpdateTokenTime;
+  bool isRepeated = false;
 
   @override
   void initState() {
@@ -37,6 +38,9 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
       // 读取剪贴板数据
       ClipboardData? clipboard = await Clipboard.getData(Clipboard.kTextPlain);
       if (clipboard == null) {
+        return;
+      }
+      if (isRepeated) {
         return;
       }
       // https://openapi.baidu.com/oauth/2.0/login_success#expires_in=2592000&access_token=123.e3d84b8ea407f68cb2c9488254e9b26a.YB9S4Ba5ZApAc-LMuXaEaH8tq-yH00Yr6rbCjKx.l9USDQ&session_secret=&session_key=&scope=basic+netdisk
@@ -63,14 +67,14 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
             bc.scope = arr[1];
           }
         }
+        int now = (DateTime.now().millisecondsSinceEpoch / 1000).floor();
         String existSql = "select * from baidu_config";
         List<Map<dynamic, dynamic>> results = await TableHelper.query(existSql);
         if (results.isNotEmpty) {
           Map<dynamic, dynamic> res = results[0];
           // int lastStoreTime = int.parse(res['store_time'].toString());
-          // int expireIn = int.parse(res['expires_in'].toString());
-          int now = (DateTime.now().millisecondsSinceEpoch / 1000).round();
-          // if (now - lastStoreTime > expireIn) {
+          int expiresIn = int.parse(res['expires_in'].toString());
+          // if (now - lastStoreTime > expiresIn) {
           //   String updateSql = 'UPDATE "baidu_config" SET "access_token" = ?, "expires_in" = ?, "session_secret" = ?, "session_key" = ?, "scope" = ?, "store_time" = ? WHERE "id" = ?;';
           //   await TableHelper.update(updateSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, now, res['id']]);
           //   toast("百度配置已更新！");
@@ -80,11 +84,19 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
           String updateSql = 'UPDATE "baidu_config" SET "access_token" = ?, "expires_in" = ?, "session_secret" = ?, "session_key" = ?, "scope" = ?, "store_time" = ? WHERE "id" = ?;';
           await TableHelper.update(updateSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, now, res['id']]);
           toast("百度配置已更新！");
+          setState(() {
+            isRepeated = true;
+            nextUpdateTokenTime = (now + expiresIn - now).toDay();
+          });
         } else {
-          bc.storeTime = (DateTime.now().millisecondsSinceEpoch / 1000).round();
           String insertSql = 'INSERT INTO "baidu_config" ( "access_token", "expires_in", "session_secret", "session_key", "scope", "store_time" ) VALUES ( ?, ?, ?, ?, ?, ?);';
-          await TableHelper.insert(insertSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, bc.storeTime]);
+          await TableHelper.insert(insertSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, now]);
           toast("百度配置已写入，你可以正常使用了。祝您使用愉快！");
+          setState(() {
+            isRepeated = true;
+            int expiresIn = bc.expiresIn!;
+            nextUpdateTokenTime = (now + expiresIn - now).toDay();
+          });
         }
       }
     }
