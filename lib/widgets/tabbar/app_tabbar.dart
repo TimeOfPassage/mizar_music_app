@@ -14,7 +14,7 @@ class AppTabbarWidget extends StatefulWidget {
 class _AppTabbarWidgetState extends State<AppTabbarWidget> {
   // late StreamSubscription _sub;
   late PageController _controller;
-  int _currentIndex = 1;
+  int _currentIndex = 0;
 
   // tabbar list
   List<Widget> bottomBarList = const [

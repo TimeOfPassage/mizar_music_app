@@ -12,8 +12,6 @@ import 'utils/index.dart';
 void main() {
   // 确保初始化
   WidgetsFlutterBinding.ensureInitialized();
-  //滚动性能优化 1.22.0
-  GestureBinding.instance.resamplingEnabled = true;
   // init logger
   LoggerHelper().initLogger();
   // 运行主App

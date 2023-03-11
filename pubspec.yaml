@@ -39,6 +39,8 @@ dependencies:
   url_launcher: ^6.1.10
   # 弹框
   fluttertoast: ^8.2.1
+  # 轮播图
+  card_swiper: ^2.0.4
 
 
 
