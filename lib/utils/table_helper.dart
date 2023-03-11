@@ -1,4 +1,3 @@
-import 'package:mizar_music_app/common/app_table.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 

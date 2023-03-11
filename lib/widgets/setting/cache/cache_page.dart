@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mizar_music_app/extension/int_extension.dart';
 import 'package:mizar_music_app/utils/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,10 +15,14 @@ class CachePage extends StatefulWidget {
 }
 
 class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
+  String? nextUpdateTokenTime;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // fetch config info
+    _fetchBaiduConfigInfo();
   }
 
   @override
@@ -28,7 +33,6 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    // LoggerHelper.i("active...$state");
     if (state == AppLifecycleState.resumed) {
       // 读取剪贴板数据
       ClipboardData? clipboard = await Clipboard.getData(Clipboard.kTextPlain);
@@ -59,28 +63,46 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
             bc.scope = arr[1];
           }
         }
-        await TableHelper.open();
         String existSql = "select * from baidu_config";
         List<Map<dynamic, dynamic>> results = await TableHelper.query(existSql);
         if (results.isNotEmpty) {
           Map<dynamic, dynamic> res = results[0];
-          // 如果
-          // debugPrint(res.toString());
-          int lastStoreTime = int.parse(res['store_time'].toString());
-          int expireIn = int.parse(res['expires_in'].toString());
-          int now = DateTime.now().millisecondsSinceEpoch;
-          if (now - lastStoreTime > (expireIn * 1000)) {
-            String updateSql = '''UPDATE "baidu_config" SET "access_token" = ?, "expires_in" = ?, "session_secret" = ?, "session_key" = ?, "scope" = ?, "store_time" = ? WHERE "id" = ?;''';
-            await TableHelper.update(updateSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, now, res['id']]);
-          }
+          // int lastStoreTime = int.parse(res['store_time'].toString());
+          // int expireIn = int.parse(res['expires_in'].toString());
+          int now = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+          // if (now - lastStoreTime > expireIn) {
+          //   String updateSql = 'UPDATE "baidu_config" SET "access_token" = ?, "expires_in" = ?, "session_secret" = ?, "session_key" = ?, "scope" = ?, "store_time" = ? WHERE "id" = ?;';
+          //   await TableHelper.update(updateSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, now, res['id']]);
+          //   toast("百度配置已更新！");
+          // } else {
+          //   toast("百度配置已存在");
+          // }
+          String updateSql = 'UPDATE "baidu_config" SET "access_token" = ?, "expires_in" = ?, "session_secret" = ?, "session_key" = ?, "scope" = ?, "store_time" = ? WHERE "id" = ?;';
+          await TableHelper.update(updateSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, now, res['id']]);
+          toast("百度配置已更新！");
         } else {
-          bc.storeTime = DateTime.now().millisecondsSinceEpoch;
-          String insertSql = '''INSERT INTO "baidu_config" ( "access_token", "expires_in", "session_secret", "session_key", "scope", "store_time" ) VALUES ( ?, ?, ?, ?, ?, ?);''';
+          bc.storeTime = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+          String insertSql = 'INSERT INTO "baidu_config" ( "access_token", "expires_in", "session_secret", "session_key", "scope", "store_time" ) VALUES ( ?, ?, ?, ?, ?, ?);';
           await TableHelper.insert(insertSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, bc.storeTime]);
+          toast("百度配置已写入，你可以正常使用了。祝您使用愉快！");
         }
-        LoggerHelper.i(results.length);
-        await TableHelper.close();
       }
+    }
+  }
+
+  _fetchBaiduConfigInfo() async {
+    await TableHelper.open();
+    String existSql = "select * from baidu_config";
+    List<Map<dynamic, dynamic>> results = await TableHelper.query(existSql);
+    if (results.isNotEmpty) {
+      Map<dynamic, dynamic> res = results[0];
+      int expiresIn = res['expires_in'];
+      int storeTime = res['store_time'];
+      int now = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+      LoggerHelper.d(storeTime + expiresIn - now);
+      setState(() {
+        nextUpdateTokenTime = (storeTime + expiresIn - now).toDay();
+      });
     }
   }
 
@@ -115,6 +137,7 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
               await launchUrl(Uri.parse(kBaiduAuthorizationUrl), mode: LaunchMode.externalApplication);
             }
           },
+          suffixWidget: nextUpdateTokenTime != null ? Text("授权可用时间: $nextUpdateTokenTime") : const Text("去授权"),
         ),
       ]),
     );

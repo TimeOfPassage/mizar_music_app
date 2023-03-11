@@ -88,7 +88,7 @@ class _PersonSettingPageState extends State<PersonSettingPage> {
           CircleAvatar(
             backgroundColor: AppColors.backgroundColor,
             radius: 45,
-            child: Image.network("https://timeofpassage.github.io/_media/logo.png"),
+            child: Image.asset(AppAssets.logo),
           ),
           const SizedBox(width: 20),
           // intro for music

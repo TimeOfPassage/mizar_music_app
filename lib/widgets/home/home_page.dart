@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mizar_music_app/common/index.dart';
 
 /// home page
 class HomePage extends StatefulWidget {
@@ -14,8 +15,7 @@ class _HomePageState extends State<HomePage> {
     return TextButton(
       onPressed: () async {
         ClipboardData? text = await Clipboard.getData(Clipboard.kTextPlain);
-        // LoggerHelper.i(text?.text.toString());
-        debugPrint(text?.text.toString() ?? "empty data");
+        toast(text?.text.toString() ?? "empty data");
       },
       child: const Text("获取剪贴板内容"),
     );
