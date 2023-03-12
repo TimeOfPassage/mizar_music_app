@@ -4,6 +4,7 @@ import 'package:mizar_music_app/common/index.dart';
 
 /// 自定义appbar
 AppBar refAppBar({
+  required BuildContext context,
   required String title,
   Color? backgroundColor,
 }) {
@@ -11,6 +12,12 @@ AppBar refAppBar({
     backgroundColor: backgroundColor ?? AppColors.backgroundColor,
     elevation: 0,
     title: Text(title, style: const TextStyle(color: AppColors.titleColor)),
+    leading: IconButton(
+      icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+      onPressed: () {
+        Navigator.of(context).pop();
+      },
+    ),
   );
 }
 

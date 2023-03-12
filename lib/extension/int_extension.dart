@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 extension IntExtension on int {
   String toDateShow() {
     int minutes = (this / 60).floor(); // this = 2576173, minutes = 42936
@@ -50,5 +52,9 @@ extension IntExtension on int {
       return "$days天$remainMinutes分$remainSeconds秒";
     }
     return "$days天$remainHours小时$remainMinutes分$remainSeconds秒";
+  }
+
+  String toYYYYMMDDHHmmss() {
+    return DateFormat('yyyy-MM-dd hh:mm:ss').format(DateTime.fromMillisecondsSinceEpoch(this));
   }
 }

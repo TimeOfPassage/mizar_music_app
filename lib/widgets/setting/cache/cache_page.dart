@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:mizar_music_app/api/index.dart';
 import 'package:mizar_music_app/extension/int_extension.dart';
 import 'package:mizar_music_app/utils/index.dart';
+import 'package:mizar_music_app/widgets/setting/cache/sync_baidu_music_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../common/index.dart';
@@ -20,6 +22,7 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
   Map<String, dynamic>? baiduUserInfo;
   Map<String, dynamic>? baiduCapicity;
   bool isRepeated = false;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -107,6 +110,9 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
   }
 
   _fetchBaiduConfigInfo() async {
+    setState(() {
+      isLoading = true;
+    });
     String existSql = "select * from baidu_config";
     List<Map<dynamic, dynamic>> results = await TableHelper.query(existSql);
     if (results.isNotEmpty) {
@@ -125,50 +131,43 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
         if (capicity['errno'] == 0) {
           baiduCapicity = capicity;
         }
+        isLoading = false;
       });
     }
   }
 
   Widget _buildMainView() {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
-        elevation: 0,
-        title: const Text("存储配置", style: TextStyle(color: AppColors.titleColor)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-      ),
-      body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        // every item setting info
-        _buildSettingItemInfoView(
-          title: "码云(Gitee)配置",
-          icon: AppIcons.gitee,
-          onTap: () => {
-            // Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CachePage())),
-          },
-        ),
-        _buildSettingItemInfoView(
-          title: "百度云配置",
-          icon: AppIcons.baidu,
-          onTap: () async {
-            bool isOpenUrlSuccess = await launchUrl(Uri.parse(kBaiduAuthorizationUrl), mode: LaunchMode.externalApplication);
-            if (!isOpenUrlSuccess) {
-              await launchUrl(Uri.parse(kBaiduAuthorizationUrl), mode: LaunchMode.externalApplication);
-            }
-          },
-          suffixWidget: nextUpdateTokenTime != null
-              ? Text(
-                  "$nextUpdateTokenTime",
-                  style: const TextStyle(fontSize: 12),
-                )
-              : const Text("去授权"),
-          showUserInfo: baiduUserInfo != null,
-        ),
-      ]),
+      appBar: refAppBar(context: context, title: "存储配置"),
+      body: isLoading
+          ? Center(child: LoadingAnimationWidget.dotsTriangle(color: AppColors.brandColor, size: 60))
+          : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              // every item setting info
+              _buildSettingItemInfoView(
+                title: "码云(Gitee)配置",
+                icon: AppIcons.gitee,
+                onTap: () => {
+                  // Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CachePage())),
+                },
+              ),
+              _buildSettingItemInfoView(
+                title: "百度云配置",
+                icon: AppIcons.baidu,
+                onTap: () async {
+                  bool isOpenUrlSuccess = await launchUrl(Uri.parse(kBaiduAuthorizationUrl), mode: LaunchMode.externalApplication);
+                  if (!isOpenUrlSuccess) {
+                    await launchUrl(Uri.parse(kBaiduAuthorizationUrl), mode: LaunchMode.externalApplication);
+                  }
+                },
+                suffixWidget: nextUpdateTokenTime != null
+                    ? Text(
+                        "$nextUpdateTokenTime",
+                        style: const TextStyle(fontSize: 12),
+                      )
+                    : const Text("去授权"),
+                showUserInfo: baiduUserInfo != null,
+              ),
+            ]),
     );
   }
 
@@ -219,15 +218,47 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
                   AppSizes.boxW20,
                   // intro for music
                   SizedBox(
-                    width: MediaQuery.of(context).size.width - 110 - (4 * AppSizes.kPaddingSize),
+                    width: MediaQuery.of(context).size.width - 170 - (4 * AppSizes.kPaddingSize),
                     child: Text.rich(
                       TextSpan(children: [
                         TextSpan(text: "百度账号: ${baiduUserInfo!['baidu_name']}\n", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         const TextSpan(),
                         TextSpan(text: "昵称: ${baiduUserInfo!['netdisk_name']}\n", style: const TextStyle(fontSize: 14)),
                         const TextSpan(),
-                        TextSpan(text: "容量: ${(baiduCapicity!['used']/1024/1024/1024).floor()}G/${(baiduCapicity!['total']/1024/1024/1024).floor()}G", style: const TextStyle(fontSize: 12)),
+                        TextSpan(
+                            text: "容量: ${(baiduCapicity!['used'] / 1024 / 1024 / 1024).floor()}G/${(baiduCapicity!['total'] / 1024 / 1024 / 1024).floor()}G", style: const TextStyle(fontSize: 12)),
                       ]),
+                    ),
+                  ),
+                  // 同步百度数据
+                  SizedBox(
+                    width: 60,
+                    child: IconButton(
+                      onPressed: () async {
+                        await showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text("提示"),
+                              content: const Text("确定要同步百度云目录(mizar_music)下数据么? 此操作可能产生的流量费用和该目录下文件总大小相关, 故最好在wifi下操作."),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: const Text("取消"),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                ),
+                                TextButton(
+                                  child: const Text("开始同步"),
+                                  onPressed: () async {
+                                    Navigator.of(context).pop(true);
+                                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SyncBaiduMusicPage()));
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.sync_alt),
                     ),
                   ),
                 ]),

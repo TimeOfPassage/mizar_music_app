@@ -14,7 +14,7 @@ class TableHelper {
   static open() async {
     String databasePath = await getDatabasesPath();
     String path = join(databasePath, kAppDatabaseName);
-    LoggerHelper.d('数据库存储路径path:$path');
+    LoggerHelper.i('数据库存储路径path:$path');
     try {
       _database = await openDatabase(path);
       LoggerHelper.d('DB open');
@@ -49,6 +49,17 @@ class TableHelper {
     return await _database!.rawInsert(sql, paramters);
   }
 
+  static Future<List<Object?>> batchInsert(String table, List paramters) async {
+    if (_database == null) {
+      await open();
+    }
+    var batch = _database!.batch();
+    for (var element in paramters) {
+      batch.insert(table, element.toMap());
+    }
+    return await batch.commit();
+  }
+
   ///sql原生查找
   static Future<List<Map>> query(String sql) async {
     if (_database == null) {
@@ -73,6 +84,14 @@ class TableHelper {
     }
     //样例： 样例：await dbUtil.delete('DELETE FROM relation WHERE uid = ? and fuid = ?', [123,234]);
     return await _database!.rawDelete(sql, parameters);
+  }
+
+  static Future<int> deleteAll(String table) async {
+    if (_database == null) {
+      await open();
+    }
+    //样例： 样例：await dbUtil.delete('DELETE FROM relation WHERE uid = ? and fuid = ?', [123,234]);
+    return await _database!.delete(table);
   }
 
   Future init() async {

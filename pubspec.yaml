@@ -43,6 +43,9 @@ dependencies:
   card_swiper: 2.0.4
   # 网络请求工具
   dio: 5.0.2
+  # 加载库
+  loading_animation_widget: 1.2.0+4
+  intl: 0.18.0
 
 
 
