@@ -31,6 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   path: 1.8.3
+  path_provider: 2.0.13
   # 轻型数据库
   sqflite: 2.2.5
   # 日志
@@ -46,6 +47,8 @@ dependencies:
   # 加载库
   loading_animation_widget: 1.2.0+4
   intl: 0.18.0
+  # 播放插件
+  just_audio: 0.9.31
 
 
 
@@ -78,6 +81,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/logo.png
+    - assets/animal.flac
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

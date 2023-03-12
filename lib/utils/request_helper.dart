@@ -10,7 +10,6 @@ class RequestHelper {
 
   static dynamic request({
     required String url,
-    
     Map<String, dynamic>? params,
     Map<String, dynamic>? headers,
   }) async {
@@ -18,9 +17,7 @@ class RequestHelper {
     Response response = await _dio.request(
       url,
       queryParameters: params,
-      options: Options(
-        headers: headers,
-      ),
+      options: Options(headers: headers),
     );
     if (response.statusCode != 200) {
       LoggerHelper.e(response);
@@ -28,5 +25,30 @@ class RequestHelper {
       LoggerHelper.d(response);
     }
     return response.data;
+  }
+
+  static dynamic download({
+    required String url,
+    required String savePath,
+    Map<String, dynamic>? params,
+    Map<String, dynamic>? headers,
+    Object? data,
+    void Function(int, int)? onReceiveProgress,
+  }) async {
+    LoggerHelper.d("请求URL: $url");
+    Response<dynamic> response = await _dio.download(
+      url,
+      savePath,
+      queryParameters: params,
+      data: data,
+      options: Options(headers: headers),
+      onReceiveProgress: onReceiveProgress,
+    );
+    if (response.statusCode != 200) {
+      LoggerHelper.e(response);
+    } else {
+      LoggerHelper.d(response);
+    }
+    return response;
   }
 }

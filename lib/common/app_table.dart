@@ -31,7 +31,8 @@ class AppTables {
       path TEXT(200) NOT NULL, 
       server_filename TEXT(100) NOT NULL,
       music_name TEXT(100) NOT NULL,
-      author TEXT(100) NOT NULL
+      author TEXT(100) NOT NULL,
+      is_sync INTEGER NOT NULL
     );
   ''';
 

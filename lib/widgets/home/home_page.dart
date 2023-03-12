@@ -1,6 +1,12 @@
+import 'dart:math';
+
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:mizar_music_app/common/index.dart';
+import 'package:mizar_music_app/entity/music_info.dart';
+
+import '../../utils/index.dart';
+import 'music_play_page.dart';
 
 /// home page
 class HomePage extends StatefulWidget {
@@ -15,6 +21,9 @@ class _HomePageState extends State<HomePage> {
   late FocusNode searchFocus;
   String? searchText;
 
+  ///
+  List<MusicInfoEntity>? musicList;
+
   List<String> pictures = [
     "https://scpic.chinaz.net/files/default/imgs/2022-12-08/060ef5cce6f18457.jpg",
     "https://scpic.chinaz.net/files/default/imgs/2023-02-03/adc77c8e5c94d758.jpg",
@@ -28,6 +37,8 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     controller = TextEditingController();
     searchFocus = FocusNode();
+    // 随机获取三首音乐
+    _randomFetchThreeMusic();
   }
 
   @override
@@ -35,6 +46,20 @@ class _HomePageState extends State<HomePage> {
     searchFocus.dispose();
     controller.dispose();
     super.dispose();
+  }
+
+  _randomFetchThreeMusic() async {
+    List<MusicInfoEntity> mList = await MusicHelper.randomFetchThreeMusicList();
+    if (mList.isEmpty) {
+      return;
+    }
+    mList.shuffle(Random());
+    // if (mList.length > 3) {
+    //   mList = mList.sublist(0, 3);
+    // }
+    setState(() {
+      musicList = mList;
+    });
   }
 
   Widget _buildMainView() {
@@ -48,9 +73,9 @@ class _HomePageState extends State<HomePage> {
           // build swiper
           _buildSwiper(),
           // build recommand music group
-          _buildRecommandGroup(groupName: "播放推荐"),
+          _buildRecommandGroup(groupName: "常用分组", childTexts: ["全部音乐", "常用播放"]),
           // build top 10 play
-          _buildTop10Group(groupName: "Top10播放"),
+          // _buildTop10Group(groupName: "Top10播放"),
         ]),
       ),
     );
@@ -92,7 +117,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildRecommandGroup({required String groupName}) {
+  Widget _buildRecommandGroup({required String groupName, required List<String> childTexts}) {
+    double w = (MediaQuery.of(context).size.width - 4 * AppSizes.kGapSize) / 2;
     return SliverToBoxAdapter(
       child: Card(
         color: AppColors.backgroundColor,
@@ -111,18 +137,36 @@ class _HomePageState extends State<HomePage> {
             width: double.infinity,
             child: ListView.custom(
               scrollDirection: Axis.horizontal,
-              cacheExtent: 140,
-              itemExtent: 140 + AppSizes.kPaddingSize,
+              physics: const NeverScrollableScrollPhysics(),
               childrenDelegate: SliverChildBuilderDelegate((context, index) {
-                return Container(
-                  width: 140,
-                  height: 140,
-                  margin: const EdgeInsets.only(right: AppSizes.kPaddingSize),
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppSizes.kPaddingSize)),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.network(pictures[index % pictures.length], fit: BoxFit.fill),
-                );
-              }, childCount: pictures.length * 2),
+                return Stack(children: [
+                  Container(
+                    width: w,
+                    height: 140,
+                    margin: const EdgeInsets.only(right: AppSizes.kPaddingSize),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppSizes.kPaddingSize)),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.network(pictures[index], fit: BoxFit.fill),
+                  ),
+                  Container(
+                    width: w,
+                    height: 140,
+                    margin: const EdgeInsets.only(right: AppSizes.kPaddingSize),
+                    decoration: BoxDecoration(color: Colors.black.withAlpha(100), borderRadius: BorderRadius.circular(AppSizes.kPaddingSize)),
+                  ),
+                  Container(
+                    width: w,
+                    height: 140,
+                    margin: const EdgeInsets.only(right: AppSizes.kPaddingSize),
+                    child: Center(
+                      child: Text(
+                        childTexts[index],
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: AppColors.middleColor),
+                      ),
+                    ),
+                  ),
+                ]);
+              }, childCount: 2),
             ),
           ),
         ]),
@@ -138,14 +182,30 @@ class _HomePageState extends State<HomePage> {
         clipBehavior: Clip.antiAlias,
         margin: const EdgeInsets.symmetric(vertical: AppSizes.kGapSize),
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppSizes.kPaddingSize)),
-        child: Swiper(
-          itemBuilder: (BuildContext context, int index) {
-            return Image.network(pictures[index], fit: BoxFit.fill);
-          },
-          itemCount: pictures.length,
-          pagination: const SwiperPagination(),
-          // control: const SwiperControl(),
-        ),
+        child: musicList != null
+            ? Swiper(
+                itemBuilder: (BuildContext context, int index) {
+                  // return Image.network(pictures[index], fit: BoxFit.fill);
+                  MusicInfoEntity mi = musicList![index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => MusicPlayPage(musicInfoEntity: mi)));
+                    },
+                    child: Container(
+                      color: ColorHelper.getRandomColor(),
+                      child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                        Text(mi.musicName ?? "Unknown", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+                        AppSizes.boxH10,
+                        Text(mi.author ?? "Unknown Author", style: const TextStyle(fontSize: 15)),
+                      ]),
+                    ),
+                  );
+                },
+                itemCount: musicList!.length,
+                pagination: const SwiperPagination(),
+                // control: const SwiperControl(),
+              )
+            : const Text("请先同步音乐信息\n 设置->存储设置->百度云设置"),
       ),
     );
   }

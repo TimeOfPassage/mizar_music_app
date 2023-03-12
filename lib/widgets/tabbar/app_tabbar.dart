@@ -31,21 +31,13 @@ class _AppTabbarWidgetState extends State<AppTabbarWidget> {
   void initState() {
     super.initState();
     _controller = PageController(initialPage: _currentIndex);
-    // init db
-    _initDatabase();
   }
 
   @override
   void dispose() async {
     _controller.dispose();
     await TableHelper.close();
-    // _sub.cancel();
     super.dispose();
-  }
-
-  _initDatabase() async {
-    await TableHelper().init();
-    await TableHelper.open();
   }
 
   Widget _buildMainView() {

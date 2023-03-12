@@ -12,15 +12,22 @@ import 'utils/index.dart';
 void main() {
   // 确保初始化
   WidgetsFlutterBinding.ensureInitialized();
-  // init logger
-  LoggerHelper().initLogger(level: Level.info);
-  // 运行主App
-  runApp(const MizarMusicApp());
+  _init().then((value) {
+    runApp(const MizarMusicApp());
+  });
   //设置Android头部的导航栏透明
   if (Platform.isAndroid) {
     SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(statusBarColor: Colors.transparent);
     SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
+}
+
+Future _init() async {
+  // init logger
+  LoggerHelper().initLogger(level: Level.info);
+  // init database
+  await TableHelper().init();
+  await TableHelper.open();
 }
 
 class MizarMusicApp extends StatelessWidget {

@@ -23,7 +23,9 @@ class MusicInfoEntity {
   String? musicName;
   String? author;
 
-  MusicInfoEntity(this.id, this.fsId, this.size, this.createTime, this.path, this.serverFileName, this.musicName, this.author);
+  int? isSync;
+
+  MusicInfoEntity(this.id, this.fsId, this.size, this.createTime, this.path, this.serverFileName, this.musicName, this.author, this.isSync);
 
   MusicInfoEntity.fromMap(Map<String, dynamic> json) {
     fsId = json['fs_id'];
@@ -31,6 +33,7 @@ class MusicInfoEntity {
     createTime = DateTime.now().millisecondsSinceEpoch;
     path = json['path'];
     serverFileName = json['server_filename'];
+    isSync = json['is_sync'] ?? 0;
     if (serverFileName != null) {
       List<String> infos = serverFileName!.split("-");
       musicName = infos[0];
@@ -47,6 +50,7 @@ class MusicInfoEntity {
     map['server_filename'] = serverFileName;
     map['music_name'] = musicName;
     map['author'] = author;
+    map['is_sync'] = isSync;
     return map;
   }
 }
