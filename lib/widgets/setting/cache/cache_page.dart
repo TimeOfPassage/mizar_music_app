@@ -133,6 +133,10 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
         }
         isLoading = false;
       });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
