@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 import 'package:mizar_music_app/extension/color_extension.dart';
 import 'package:mizar_music_app/widgets/tabbar/app_tabbar.dart';
 
@@ -12,7 +13,7 @@ void main() {
   // 确保初始化
   WidgetsFlutterBinding.ensureInitialized();
   // init logger
-  LoggerHelper().initLogger();
+  LoggerHelper().initLogger(level: Level.info);
   // 运行主App
   runApp(const MizarMusicApp());
   //设置Android头部的导航栏透明

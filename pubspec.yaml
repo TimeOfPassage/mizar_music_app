@@ -36,11 +36,13 @@ dependencies:
   # 日志
   logger: 1.2.2
   # 运行指定应用
-  url_launcher: ^6.1.10
+  url_launcher: 6.1.10
   # 弹框
-  fluttertoast: ^8.2.1
+  fluttertoast: 8.2.1
   # 轮播图
-  card_swiper: ^2.0.4
+  card_swiper: 2.0.4
+  # 网络请求工具
+  dio: 5.0.2
 
 
 

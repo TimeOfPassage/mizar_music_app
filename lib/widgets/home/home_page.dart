@@ -95,6 +95,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildRecommandGroup({required String groupName}) {
     return SliverToBoxAdapter(
       child: Card(
+        color: AppColors.backgroundColor,
         margin: const EdgeInsets.symmetric(vertical: AppSizes.kGapSize),
         elevation: 0,
         child: Column(children: [

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mizar_music_app/widgets/setting/cache/cache_page.dart';
 
 import '../../common/index.dart';
-import 'skin/skin_page.dart';
+// import 'skin/skin_page.dart';
 
 class PersonSettingPage extends StatefulWidget {
   const PersonSettingPage({super.key, required this.title});
@@ -21,13 +21,6 @@ class _PersonSettingPageState extends State<PersonSettingPage> {
         _buildMizarMusicIntroView(),
         // every item setting info
         _buildSettingItemInfoView(
-          title: "皮肤切换",
-          icon: AppIcons.skin,
-          onTap: () => {
-            Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SkinPage())),
-          },
-        ),
-        _buildSettingItemInfoView(
           title: "存储配置",
           icon: AppIcons.storehouse,
           onTap: () => {
@@ -35,23 +28,38 @@ class _PersonSettingPageState extends State<PersonSettingPage> {
           },
         ),
         _buildSettingItemInfoView(
-          title: "缓存管理",
-          icon: AppIcons.cache,
-          onTap: () => {},
-          suffixWidget: const Text(
-            "125MB",
-            style: TextStyle(color: AppColors.textColor),
-          ),
+          title: "音乐分组",
+          icon: Icons.queue_music_rounded,
+          onTap: () {
+            // Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CachePage())),
+            toast("更多精彩，敬请期待!");
+          },
         ),
-        _buildSettingItemInfoView(
-          title: "检查更新",
-          icon: AppIcons.version,
-          onTap: () => {},
-          suffixWidget: const Text(
-            "1.0.0.0",
-            style: TextStyle(color: AppColors.textColor),
-          ),
-        ),
+        // _buildSettingItemInfoView(
+        //   title: "皮肤切换",
+        //   icon: AppIcons.skin,
+        //   onTap: () => {
+        //     Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SkinPage())),
+        //   },
+        // ),
+        // _buildSettingItemInfoView(
+        //   title: "缓存管理",
+        //   icon: AppIcons.cache,
+        //   onTap: () => {},
+        //   suffixWidget: const Text(
+        //     "125MB",
+        //     style: TextStyle(color: AppColors.textColor),
+        //   ),
+        // ),
+        // _buildSettingItemInfoView(
+        //   title: "检查更新",
+        //   icon: AppIcons.version,
+        //   onTap: () => {},
+        //   suffixWidget: const Text(
+        //     "1.0.0.0",
+        //     style: TextStyle(color: AppColors.textColor),
+        //   ),
+        // ),
       ]),
     );
   }
@@ -90,16 +98,19 @@ class _PersonSettingPageState extends State<PersonSettingPage> {
             radius: 45,
             child: Image.asset(AppAssets.logo),
           ),
-          const SizedBox(width: 20),
+          AppSizes.boxW20,
           // intro for music
-          SizedBox(
-            width: MediaQuery.of(context).size.width - 110 - (4 * AppSizes.kPaddingSize),
-            child: const Text.rich(
-              TextSpan(children: [
-                TextSpan(text: "Mizar音乐App", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                TextSpan(text: "是一款开源的App, 它使用Flutter进行开发完成。"),
-                TextSpan(text: "您需要先进行下方存储设置, 然后才可以进行音乐文件存储。"),
-              ]),
+          Padding(
+            padding: const EdgeInsets.only(top: AppSizes.kPaddingSize),
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width - 110 - (4 * AppSizes.kPaddingSize),
+              child: const Text.rich(
+                TextSpan(children: [
+                  TextSpan(text: "开阳音乐", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  TextSpan(text: "\r\n开阳(大熊座ζ)是大熊座的一颗恒星", style: TextStyle(fontSize: 12)),
+                  TextSpan(text: "\r\n位在北斗的斗柄尾端第二颗星, 是北斗七星之一", style: TextStyle(fontSize: 12)),
+                ]),
+              ),
             ),
           ),
         ]),

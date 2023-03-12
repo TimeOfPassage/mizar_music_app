@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mizar_music_app/api/index.dart';
 import 'package:mizar_music_app/extension/int_extension.dart';
 import 'package:mizar_music_app/utils/index.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +17,8 @@ class CachePage extends StatefulWidget {
 
 class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
   String? nextUpdateTokenTime;
+  Map<String, dynamic>? baiduUserInfo;
+  Map<String, dynamic>? baiduCapicity;
   bool isRepeated = false;
 
   @override
@@ -72,8 +75,8 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
         List<Map<dynamic, dynamic>> results = await TableHelper.query(existSql);
         if (results.isNotEmpty) {
           Map<dynamic, dynamic> res = results[0];
+          // int expiresIn = int.parse(res['expires_in'].toString());
           // int lastStoreTime = int.parse(res['store_time'].toString());
-          int expiresIn = int.parse(res['expires_in'].toString());
           // if (now - lastStoreTime > expiresIn) {
           //   String updateSql = 'UPDATE "baidu_config" SET "access_token" = ?, "expires_in" = ?, "session_secret" = ?, "session_key" = ?, "scope" = ?, "store_time" = ? WHERE "id" = ?;';
           //   await TableHelper.update(updateSql, [bc.accessToken, bc.expiresIn, bc.sessionKey, bc.sessionSecret, bc.scope, now, res['id']]);
@@ -86,7 +89,6 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
           toast("百度配置已更新！");
           setState(() {
             isRepeated = true;
-            nextUpdateTokenTime = (now + expiresIn - now).toDay();
           });
         } else {
           String insertSql = 'INSERT INTO "baidu_config" ( "access_token", "expires_in", "session_secret", "session_key", "scope", "store_time" ) VALUES ( ?, ?, ?, ?, ?, ?);';
@@ -94,16 +96,17 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
           toast("百度配置已写入，你可以正常使用了。祝您使用愉快！");
           setState(() {
             isRepeated = true;
-            int expiresIn = bc.expiresIn!;
-            nextUpdateTokenTime = (now + expiresIn - now).toDay();
           });
         }
+        // 清空剪切板
+        Clipboard.setData(const ClipboardData());
+        // 抓去数据
+        await _fetchBaiduConfigInfo();
       }
     }
   }
 
   _fetchBaiduConfigInfo() async {
-    await TableHelper.open();
     String existSql = "select * from baidu_config";
     List<Map<dynamic, dynamic>> results = await TableHelper.query(existSql);
     if (results.isNotEmpty) {
@@ -112,8 +115,16 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
       int storeTime = res['store_time'];
       int now = (DateTime.now().millisecondsSinceEpoch / 1000).round();
       LoggerHelper.d(storeTime + expiresIn - now);
+      var user = await BaiduApi.getUserInfo(res['access_token']);
+      var capicity = await BaiduApi.getNetdiskCapicity(res['access_token']);
       setState(() {
-        nextUpdateTokenTime = (storeTime + expiresIn - now).toDay();
+        nextUpdateTokenTime = (storeTime + expiresIn - now).toDateShow();
+        if (user['errno'] == 0) {
+          baiduUserInfo = user;
+        }
+        if (capicity['errno'] == 0) {
+          baiduCapicity = capicity;
+        }
       });
     }
   }
@@ -149,28 +160,80 @@ class _CachePageState extends State<CachePage> with WidgetsBindingObserver {
               await launchUrl(Uri.parse(kBaiduAuthorizationUrl), mode: LaunchMode.externalApplication);
             }
           },
-          suffixWidget: nextUpdateTokenTime != null ? Text("授权可用时间: $nextUpdateTokenTime") : const Text("去授权"),
+          suffixWidget: nextUpdateTokenTime != null
+              ? Text(
+                  "$nextUpdateTokenTime",
+                  style: const TextStyle(fontSize: 12),
+                )
+              : const Text("去授权"),
+          showUserInfo: baiduUserInfo != null,
         ),
       ]),
     );
   }
 
-  Widget _buildSettingItemInfoView({required String title, required IconData icon, Function()? onTap, Widget? suffixWidget}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 68,
-        padding: const EdgeInsets.all(AppSizes.kPaddingSize),
-        decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 5, color: Colors.grey.shade100))),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          Icon(icon, size: 20),
-          AppSizes.boxW10,
-          Text(title, style: const TextStyle(color: AppColors.titleColor)),
-          const Spacer(),
-          suffixWidget ?? const SizedBox.shrink(),
-          onTap != null ? const Icon(Icons.arrow_right, color: AppColors.textColor) : const SizedBox.shrink(),
-        ]),
-      ),
+  Widget _buildSettingItemInfoView({required String title, required IconData icon, Function()? onTap, Widget? suffixWidget, bool showUserInfo = false}) {
+    return Column(
+      children: [
+        // 条目项
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 68,
+            padding: const EdgeInsets.all(AppSizes.kPaddingSize),
+            decoration: !showUserInfo ? BoxDecoration(border: Border(bottom: BorderSide(width: 5, color: Colors.grey.shade100))) : null,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Icon(icon, size: 20),
+              AppSizes.boxW10,
+              Text(title, style: const TextStyle(color: AppColors.titleColor)),
+              const Spacer(),
+              suffixWidget ?? const SizedBox.shrink(),
+              onTap != null ? const Icon(Icons.arrow_right, color: AppColors.textColor) : const SizedBox.shrink(),
+            ]),
+          ),
+        ),
+        // 获取配置信息
+        showUserInfo
+            ? Container(
+                decoration: showUserInfo
+                    ? BoxDecoration(
+                        border: Border(bottom: BorderSide(width: 5, color: Colors.grey.shade100)),
+                        color: AppColors.backgroundColor,
+                      )
+                    : null,
+                child: Row(children: [
+                  // mizar logo
+                  Padding(
+                    padding: const EdgeInsets.all(AppSizes.kPaddingSize),
+                    child: Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(90),
+                        border: Border.all(width: 1, color: AppColors.middleColor),
+                      ),
+                      clipBehavior: Clip.hardEdge,
+                      child: Image.network(baiduUserInfo!['avatar_url']),
+                    ),
+                  ),
+                  AppSizes.boxW20,
+                  // intro for music
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width - 110 - (4 * AppSizes.kPaddingSize),
+                    child: Text.rich(
+                      TextSpan(children: [
+                        TextSpan(text: "百度账号: ${baiduUserInfo!['baidu_name']}\n", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const TextSpan(),
+                        TextSpan(text: "昵称: ${baiduUserInfo!['netdisk_name']}\n", style: const TextStyle(fontSize: 14)),
+                        const TextSpan(),
+                        TextSpan(text: "容量: ${(baiduCapicity!['used']/1024/1024/1024).floor()}G/${(baiduCapicity!['total']/1024/1024/1024).floor()}G", style: const TextStyle(fontSize: 12)),
+                      ]),
+                    ),
+                  ),
+                ]),
+              )
+            : const SizedBox.shrink(),
+      ],
     );
   }
 
