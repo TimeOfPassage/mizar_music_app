@@ -6,14 +6,15 @@ import 'package:mizar_music_app/common/index.dart';
 AppBar refAppBar({
   required BuildContext context,
   required String title,
-  Color? backgroundColor,
+  Color backgroundColor = AppColors.backgroundColor,
+  Color backColor = Colors.black,
 }) {
   return AppBar(
-    backgroundColor: backgroundColor ?? AppColors.backgroundColor,
+    backgroundColor: backgroundColor,
     elevation: 0,
     title: Text(title, style: const TextStyle(color: AppColors.titleColor)),
     leading: IconButton(
-      icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+      icon: Icon(Icons.arrow_back_ios, color: backColor),
       onPressed: () {
         Navigator.of(context).pop();
       },

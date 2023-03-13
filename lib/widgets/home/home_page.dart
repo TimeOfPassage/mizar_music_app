@@ -54,9 +54,9 @@ class _HomePageState extends State<HomePage> {
       return;
     }
     mList.shuffle(Random());
-    // if (mList.length > 3) {
-    //   mList = mList.sublist(0, 3);
-    // }
+    if (mList.length > 3) {
+      mList = mList.sublist(0, 3);
+    }
     setState(() {
       musicList = mList;
     });
