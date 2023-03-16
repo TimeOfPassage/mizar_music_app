@@ -32,6 +32,7 @@ class AppTables {
       server_filename TEXT(100) NOT NULL,
       music_name TEXT(100) NOT NULL,
       author TEXT(100) NOT NULL,
+      image_url TEXT(1000) NOT NULL,
       is_sync INTEGER NOT NULL
     );
   ''';

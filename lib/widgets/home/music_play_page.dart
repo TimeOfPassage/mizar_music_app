@@ -132,45 +132,37 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
                 child: SizedBox(
                   width: double.infinity,
                   height: 2,
-                  child: SliderTheme(
-                    data: const SliderThemeData(
-                      trackHeight: 4,
-                      thumbShape: RoundSliderThumbShape(
-                        enabledThumbRadius: 10,
-                      ),
-                    ),
-                    child: Slider(
-                      value: currentPlayTime ?? 0,
-                      activeColor: Colors.white,
-                      inactiveColor: Colors.white30,
-                      min: 0,
-                      max: totalTime ?? 300,
-                      onChangeStart: (v) async {
-                        setState(() {
-                          isPlaying = false;
-                        });
-                        await player.pause();
-                      },
-                      onChanged: (v) {
-                        setState(() {
-                          currentPlayTime = v;
-                          debugPrint(currentPlayTime.toString());
-                        });
-                      },
-                      onChangeEnd: (v) async {
-                        setState(() {
-                          isPlaying = true;
-                        });
-                        int minutes = (v / 60).floor();
-                        if (minutes < 0) {
-                          await player.seek(Duration(seconds: v.toInt()));
-                        } else {
-                          int seconds = (v % 60).floor();
-                          await player.seek(Duration(minutes: minutes, seconds: seconds));
-                        }
-                        await player.play();
-                      },
-                    ),
+                  child: Slider(
+                    value: currentPlayTime ?? 0,
+                    activeColor: Colors.white,
+                    inactiveColor: Colors.white30,
+                    min: 0,
+                    max: totalTime ?? 300,
+                    onChangeStart: (v) async {
+                      setState(() {
+                        isPlaying = false;
+                      });
+                      await player.pause();
+                    },
+                    onChanged: (v) {
+                      setState(() {
+                        currentPlayTime = v;
+                        // debugPrint(currentPlayTime.toString());
+                      });
+                    },
+                    onChangeEnd: (v) async {
+                      setState(() {
+                        isPlaying = true;
+                      });
+                      int minutes = (v / 60).floor();
+                      if (minutes < 0) {
+                        await player.seek(Duration(seconds: v.toInt()));
+                      } else {
+                        int seconds = (v % 60).floor();
+                        await player.seek(Duration(minutes: minutes, seconds: seconds));
+                      }
+                      await player.play();
+                    },
                   ),
                 ),
               ),

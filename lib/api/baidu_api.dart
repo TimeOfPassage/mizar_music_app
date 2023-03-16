@@ -1,6 +1,13 @@
 import 'package:mizar_music_app/utils/request_helper.dart';
 
-const Map<String, String> headers = {"User-Agent": "pan.baidu.com"};
+const Map<String, String> headers = {
+  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+  "Host": "pan.baidu.com",
+};
+const Map<String, String> downloadHeaders = {
+  "User-Agent": "pan.baidu.com",
+  "Host": "d.pcs.baidu.com",
+};
 
 class BaiduApi {
   static Future<Map<String, dynamic>> getUserInfo(String accessToken) async {
@@ -24,6 +31,6 @@ class BaiduApi {
   }
 
   static download(String url, String savePath) async {
-    await RequestHelper.download(url: url, savePath: savePath, headers: headers);
+    await RequestHelper.download(url: url, savePath: savePath, headers: downloadHeaders);
   }
 }

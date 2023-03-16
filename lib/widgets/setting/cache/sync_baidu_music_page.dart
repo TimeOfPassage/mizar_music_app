@@ -55,6 +55,8 @@ class _SyncBaiduMusicPageState extends State<SyncBaiduMusicPage> {
         }
       } else {
         List<MusicInfoEntity> insertDatas = list.map((e) => MusicInfoEntity.fromMap(e)).toList();
+        // fetch baidu hover url
+        insertDatas = await _fetchBaiduPictureToFill(insertDatas);
         // 写入本地数据库
         await TableHelper.batchInsert("t_music_list", insertDatas);
         setState(() {
@@ -98,11 +100,11 @@ class _SyncBaiduMusicPageState extends State<SyncBaiduMusicPage> {
         toast("抓取文件信息失败!");
       } else {
         var fileInfoList = fileInfoRes['list'] as List;
-        for (var element in fileInfoList) {
+        for (var file in fileInfoList) {
           // 写入应用目录
-          String savePath = "${directory.path}/mizar_music/${(fsIdCache[element['fs_id'].toString()] as MusicInfoEntity).serverFileName}";
+          String savePath = "${directory.path}/mizar_music/${(fsIdCache[file['fs_id'].toString()] as MusicInfoEntity).serverFileName}";
           LoggerHelper.i(savePath);
-          await BaiduApi.download("${element['dlink']}&access_token=$accessToken", savePath);
+          await BaiduApi.download("${file['dlink']}&access_token=$accessToken", savePath);
           setState(() {
             downloadCount = downloadCount + 1;
             if (downloadCount == musicList.length) {
@@ -112,10 +114,20 @@ class _SyncBaiduMusicPageState extends State<SyncBaiduMusicPage> {
             }
           });
           // 更新数据库字段
-          TableHelper.update('UPDATE "t_music_list" SET "is_sync" = ? WHERE "fs_id" = ?;', [1, element['fs_id']]);
+          TableHelper.update('UPDATE "t_music_list" SET "is_sync" = ? WHERE "fs_id" = ?;', [1, file['fs_id']]);
         }
       }
     }
+  }
+
+  _fetchBaiduPictureToFill(List<MusicInfoEntity> musicList) async {
+    if (musicList.isEmpty) {
+      return [];
+    }
+    for (var element in musicList) {
+      element.imageUrl = await BaiduHelper.fetchHoverUrl(element.serverFileName!);
+    }
+    return musicList;
   }
 
   Widget _buildMainView() {
@@ -133,27 +145,40 @@ class _SyncBaiduMusicPageState extends State<SyncBaiduMusicPage> {
                     color: AppColors.backgroundColor,
                     border: Border(bottom: BorderSide(width: 5, color: AppColors.middleColor)),
                   ),
-                  child: Column(children: [
-                    SizedBox(
-                      width: double.infinity,
-                      height: 24,
-                      child: Text(mi.musicName as String, style: const TextStyle(fontSize: 16)),
-                    ),
-                    Expanded(
-                      child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text("${mi.author}\t"),
-                        Text(
-                          "${(mi.size! / 1024 / 1024).toStringAsFixed(1)}MB",
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        const Spacer(),
-                        Text(
-                          "同步时间: ${mi.createTime!.toYYYYMMDDHHmmss()}",
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ]),
-                    ),
-                  ]),
+                  child: Row(
+                    children: [
+                      Container(
+                        height: 48,
+                        width: 48,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(48)),
+                        child: Image.network(mi.imageUrl ?? "https://t7.baidu.com/it/u=1956604245,3662848045&fm=193&f=GIF"),
+                      ),
+                      Expanded(
+                        child: Column(children: [
+                          SizedBox(
+                            width: double.infinity,
+                            height: 24,
+                            child: Text(mi.musicName as String, style: const TextStyle(fontSize: 16)),
+                          ),
+                          Expanded(
+                            child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                              Text("${mi.author}\t"),
+                              Text(
+                                "${(mi.size! / 1024 / 1024).toStringAsFixed(1)}MB",
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              const Spacer(),
+                              Text(
+                                "同步时间: ${mi.createTime!.toYYYYMMDDHHmmss()}",
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ]),
+                          ),
+                        ]),
+                      ),
+                    ],
+                  ),
                 );
               }, childCount: musicList.length),
             )

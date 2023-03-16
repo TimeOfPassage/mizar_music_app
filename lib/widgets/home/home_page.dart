@@ -185,18 +185,21 @@ class _HomePageState extends State<HomePage> {
         child: musicList != null
             ? Swiper(
                 itemBuilder: (BuildContext context, int index) {
-                  // return Image.network(pictures[index], fit: BoxFit.fill);
+                  // MusicInfoEntity mi = musicList![index];
+                  // return Image.network(mi.imageUrl!, fit: BoxFit.fill);
                   MusicInfoEntity mi = musicList![index];
                   return GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(MaterialPageRoute(builder: (context) => MusicPlayPage(musicInfoEntity: mi)));
                     },
                     child: Container(
-                      color: ColorHelper.getRandomColor(),
+                      decoration: BoxDecoration(
+                        image: DecorationImage(image: NetworkImage(mi.imageUrl!), fit: BoxFit.fill),
+                      ),
                       child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
-                        Text(mi.musicName ?? "Unknown", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+                        Text(mi.musicName ?? "Unknown", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white)),
                         AppSizes.boxH10,
-                        Text(mi.author ?? "Unknown Author", style: const TextStyle(fontSize: 15)),
+                        Text(mi.author ?? "Unknown Author", style: const TextStyle(fontSize: 15, color: Colors.white)),
                       ]),
                     ),
                   );
