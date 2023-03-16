@@ -152,7 +152,7 @@ class _SyncBaiduMusicPageState extends State<SyncBaiduMusicPage> {
                         width: 48,
                         clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(48)),
-                        child: Image.network(mi.imageUrl ?? "https://t7.baidu.com/it/u=1956604245,3662848045&fm=193&f=GIF"),
+                        child: Image.network(mi.imageUrl ?? kDefaultUrl),
                       ),
                       Expanded(
                         child: Column(children: [

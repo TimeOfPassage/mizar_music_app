@@ -23,6 +23,7 @@ class _HomePageState extends State<HomePage> {
 
   ///
   List<MusicInfoEntity>? musicList;
+  List<MusicInfoEntity>? top10MusicList;
 
   List<String> pictures = [
     "https://scpic.chinaz.net/files/default/imgs/2022-12-08/060ef5cce6f18457.jpg",
@@ -54,6 +55,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
     mList.shuffle(Random());
+    top10MusicList = mList;
     if (mList.length > 3) {
       mList = mList.sublist(0, 3);
     }
@@ -75,7 +77,7 @@ class _HomePageState extends State<HomePage> {
           // build recommand music group
           _buildRecommandGroup(groupName: "常用分组", childTexts: ["全部音乐", "常用播放"]),
           // build top 10 play
-          // _buildTop10Group(groupName: "Top10播放"),
+          _buildTop10Group(groupName: "Top10播放"),
         ]),
       ),
     );
@@ -85,7 +87,7 @@ class _HomePageState extends State<HomePage> {
     return SliverToBoxAdapter(
       child: Container(
         width: double.infinity,
-        height: 40 + (140.0 + AppSizes.kPaddingSize) * pictures.length * 2 + 10,
+        height: 40 + (140.0 + AppSizes.kPaddingSize) * ((top10MusicList ?? []).length) + 10,
         margin: const EdgeInsets.only(top: AppSizes.kPaddingSize),
         child: Column(children: [
           // group title
@@ -101,15 +103,21 @@ class _HomePageState extends State<HomePage> {
               padding: EdgeInsets.zero,
               physics: const NeverScrollableScrollPhysics(),
               childrenDelegate: SliverChildBuilderDelegate((context, index) {
-                return Container(
-                  width: 140,
-                  height: 140,
-                  margin: const EdgeInsets.only(bottom: AppSizes.kPaddingSize),
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppSizes.kPaddingSize)),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.network(pictures[index % pictures.length], fit: BoxFit.fill),
+                MusicInfoEntity mi = top10MusicList![index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => MusicPlayPage(musicInfoEntity: mi)));
+                  },
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    margin: const EdgeInsets.only(bottom: AppSizes.kPaddingSize),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppSizes.kPaddingSize)),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.network(mi.imageUrl ?? kDefaultUrl, fit: BoxFit.fill),
+                  ),
                 );
-              }, childCount: pictures.length * 2),
+              }, childCount: (top10MusicList ?? []).length),
             ),
           )
         ]),
