@@ -10,4 +10,12 @@ class AppIcons {
   static const IconData skin = IconData(0xe678, fontFamily: 'AliIcons');
   static const IconData gitee = IconData(0xe618, fontFamily: 'AliIcons');
   static const IconData baidu = IconData(0xe609, fontFamily: 'AliIcons');
+
+  // play icon
+  static const IconData onceWholeLoop = IconData(0xe651, fontFamily: 'AliIcons');
+  static const IconData randomPlay = IconData(0xe645, fontFamily: 'AliIcons');
+  static const IconData onceLoop = IconData(0xe65f, fontFamily: 'AliIcons');
+  // static const IconData loopForever = IconData(0xe651, fontFamily: 'AliIcons');
+  static const IconData musicList = IconData(0xe607, fontFamily: 'AliIcons');
+  static const IconData foreverLoop = IconData(0xe637, fontFamily: 'AliIcons');
 }

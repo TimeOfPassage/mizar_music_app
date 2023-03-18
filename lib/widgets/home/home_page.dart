@@ -54,8 +54,8 @@ class _HomePageState extends State<HomePage> {
     if (mList.isEmpty) {
       return;
     }
-    mList.shuffle(Random());
     top10MusicList = mList;
+    mList.shuffle(Random());
     if (mList.length > 3) {
       mList = mList.sublist(0, 3);
     }
@@ -106,7 +106,7 @@ class _HomePageState extends State<HomePage> {
                 MusicInfoEntity mi = top10MusicList![index];
                 return GestureDetector(
                   onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => MusicPlayPage(musicInfoEntity: mi)));
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => MusicPlayPage(musicList: top10MusicList!, currentIdx: index)));
                   },
                   child: Container(
                     width: 140,
@@ -198,7 +198,7 @@ class _HomePageState extends State<HomePage> {
                   MusicInfoEntity mi = musicList![index];
                   return GestureDetector(
                     onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => MusicPlayPage(musicInfoEntity: mi)));
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => MusicPlayPage(musicList: musicList!, currentIdx: index)));
                     },
                     child: Container(
                       decoration: BoxDecoration(
