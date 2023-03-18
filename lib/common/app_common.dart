@@ -14,7 +14,11 @@ AppBar refAppBar({
     elevation: 0,
     title: Text(title, style: const TextStyle(color: AppColors.titleColor)),
     leading: IconButton(
-      icon: Icon(Icons.arrow_back_ios, color: backColor),
+      icon: Container(
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(90), color: AppColors.backgroundColor),
+        padding: const EdgeInsets.all(2),
+        child: Center(child: Icon(Icons.arrow_back_ios_new, color: backColor)),
+      ),
       onPressed: () {
         Navigator.of(context).pop();
       },

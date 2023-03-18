@@ -257,7 +257,7 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
           SizedBox(
             width: double.infinity,
             height: double.infinity,
-            child: Image.network(currentMusic?.imageUrl ?? kDefaultUrl, fit: BoxFit.fill),
+            child: Image.network(currentMusic!.imageUrl!.isEmpty ? kDefaultUrl : currentMusic!.imageUrl!, fit: BoxFit.fill),
           ),
           ClipRect(
             child: BackdropFilter(

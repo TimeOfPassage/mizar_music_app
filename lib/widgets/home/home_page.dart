@@ -114,7 +114,17 @@ class _HomePageState extends State<HomePage> {
                     margin: const EdgeInsets.only(bottom: AppSizes.kPaddingSize),
                     decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppSizes.kPaddingSize)),
                     clipBehavior: Clip.antiAlias,
-                    child: Image.network(mi.imageUrl ?? kDefaultUrl, fit: BoxFit.fill),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(image: NetworkImage(mi.imageUrl!.isEmpty ? kDefaultUrl : mi.imageUrl!), fit: BoxFit.fill),
+                      ),
+                      padding: const EdgeInsets.only(left: AppSizes.kPaddingSize, top: AppSizes.kPaddingSize),
+                      child: Column(mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(mi.musicName ?? "Unknown", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                        AppSizes.boxH10,
+                        Text(mi.author ?? "Unknown Author", style: const TextStyle(fontSize: 12, color: Colors.white)),
+                      ]),
+                    ),
                   ),
                 );
               }, childCount: (top10MusicList ?? []).length),
@@ -202,7 +212,7 @@ class _HomePageState extends State<HomePage> {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        image: DecorationImage(image: NetworkImage(mi.imageUrl!), fit: BoxFit.fill),
+                        image: DecorationImage(image: NetworkImage(mi.imageUrl!.isEmpty ? kDefaultUrl : mi.imageUrl!), fit: BoxFit.fill),
                       ),
                       child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [
                         Text(mi.musicName ?? "Unknown", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white)),
@@ -216,7 +226,7 @@ class _HomePageState extends State<HomePage> {
                 pagination: const SwiperPagination(),
                 // control: const SwiperControl(),
               )
-            : const Text("请先同步音乐信息\n 设置->存储设置->百度云设置"),
+            : Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [Text("请先同步音乐信息"), Text("设置->存储设置->百度云设置")])),
       ),
     );
   }
