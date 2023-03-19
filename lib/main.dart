@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:logger/logger.dart';
 import 'package:mizar_music_app/extension/color_extension.dart';
 import 'package:mizar_music_app/widgets/tabbar/app_tabbar.dart';
@@ -9,12 +10,14 @@ import 'package:mizar_music_app/widgets/tabbar/app_tabbar.dart';
 import 'common/index.dart';
 import 'utils/index.dart';
 
-void main() {
-  // 确保初始化
-  WidgetsFlutterBinding.ensureInitialized();
-  _init().then((value) {
-    runApp(const MizarMusicApp());
-  });
+void main() async {
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.mizar.music.channel.audio',
+    androidNotificationChannelName: 'AudioBackgrounPlay',
+    androidNotificationOngoing: true,
+  );
+  await _init();
+  runApp(const MizarMusicApp());
   //设置Android头部的导航栏透明
   if (Platform.isAndroid) {
     SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(statusBarColor: Colors.transparent);

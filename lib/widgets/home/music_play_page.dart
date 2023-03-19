@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:mizar_music_app/common/index.dart';
 import 'package:mizar_music_app/entity/music_info.dart';
 import 'package:mizar_music_app/extension/duration_extension.dart';
@@ -22,15 +24,15 @@ class MusicPlayPage extends StatefulWidget {
 }
 
 class _MusicPlayPageState extends State<MusicPlayPage> {
-  final AudioPlayer _player = AudioPlayer();
+  late AudioPlayer _player;
   // 是否开始播放
   bool _isPlaying = false;
   // 是否拖拽
   bool _isDragging = false;
   // 是否隐藏头部
   bool _isHideAppbar = true;
-  // 播放模式 0-列表循环播放 1-单曲循环
-  int _playMode = 0;
+  // 播放模式 0-列表循环播放 1-单曲循环 2-随机播放
+  int _currentPlayMode = 2;
   // 当前播放歌曲信息
   MusicInfoEntity? currentMusic;
   // 当前播放歌曲在列表中位置
@@ -39,17 +41,17 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
   Duration _duration = Duration.zero;
   // 播放位置
   Duration _position = Duration.zero;
+  // 刚开始音量
+  double _startVolume = 0.3;
   // 播放时间订阅
   StreamSubscription? _durationSubscription;
   StreamSubscription? _positionSubscription;
-  StreamSubscription? _playerStateSubscription;
   StreamSubscription? _currentIndexSubscription;
 
   @override
   void dispose() {
     _durationSubscription?.cancel();
     _positionSubscription?.cancel();
-    _playerStateSubscription?.cancel();
     _currentIndexSubscription?.cancel();
     _player.dispose();
     super.dispose();
@@ -58,6 +60,7 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
   @override
   void initState() {
     super.initState();
+    _player = AudioPlayer();
     _initAudioPlayer();
   }
 
@@ -70,26 +73,32 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
       var directory = await getApplicationDocumentsDirectory();
       List<AudioSource> sourceList = [];
       for (var element in widget.musicList) {
-        sourceList.add(AudioSource.file("${directory.path}/mizar_music/${element.serverFileName}"));
+        sourceList.add(AudioSource.uri(
+          Uri.file("${directory.path}/mizar_music/${element.serverFileName}"),
+          tag: MediaItem(
+            id: element.id.toString(),
+            title: element.musicName ?? "Unknown Music",
+            album: element.author ?? "Unknown Author",
+            artUri: Uri.parse(element.imageUrl!.isEmpty ? kDefaultUrl : element.imageUrl!),
+          ),
+        ));
       }
-      // Define the playlist
-      final playlist = ConcatenatingAudioSource(
-        // Start loading next item just before reaching it
-        useLazyPreparation: true,
-        // Customise the shuffle algorithm
-        // shuffleOrder: DefaultShuffleOrder(),
-        // Specify the playlist items
-        children: sourceList,
-      );
-      await _player.setAudioSource(playlist, initialIndex: _currentIdx, initialPosition: Duration.zero) ?? Duration.zero;
+      final playlist = ConcatenatingAudioSource(useLazyPreparation: true, children: sourceList);
+      await _player.setAudioSource(playlist, initialIndex: _currentIdx, initialPosition: Duration.zero);
+      await _player.setVolume(_startVolume);
+      //  0-列表循环播放 1-单曲循环 2-随机播放
+      _setPlayMode(prevPlayMode: 1);
       _durationSubscription = _player.durationStream.listen((duration) {
         setState(() {
+          _position = duration ?? Duration.zero;
           _duration = duration ?? Duration.zero;
+          _position = Duration.zero;
         });
       });
       _positionSubscription = _player.positionStream.listen((position) {
         setState(() {
           _position = position;
+          _duration = Duration(seconds: max(_duration.inSeconds, _position.inSeconds));
         });
       });
       _currentIndexSubscription = _player.currentIndexStream.listen((idx) {
@@ -97,12 +106,6 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
           _currentIdx = idx ?? 0;
           currentMusic = widget.musicList[_currentIdx!];
         });
-      });
-      _playerStateSubscription = _player.playerStateStream.listen((e) {
-        if (e.processingState == ProcessingState.completed) {
-          _stop();
-          _playNext();
-        }
       });
     } catch (e) {
       LoggerHelper.e('Error: $e');
@@ -117,11 +120,21 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
   }
 
   _playPrev() async {
+    bool oldPlaying = _isPlaying;
+    await _stop();
     await _player.seekToPrevious();
+    if (oldPlaying) {
+      await _play();
+    }
   }
 
   _playNext() async {
+    bool oldPlaying = _isPlaying;
+    await _stop();
     await _player.seekToNext();
+    if (oldPlaying) {
+      await _play();
+    }
   }
 
   _pause() async {
@@ -148,10 +161,33 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
   }
 
   _onDragEnd(double value) async {
-    // LoggerHelper.i(value);
     await _seek(Duration(seconds: value.toInt()));
     if (_isDragging) {
       await _play();
+    }
+  }
+
+  _setPlayMode({int prevPlayMode = 0}) {
+    if (prevPlayMode == 0) {
+      _player.setLoopMode(LoopMode.one).then((value) {
+        setState(() {
+          _currentPlayMode = 1;
+        });
+      });
+    }
+    if (prevPlayMode == 1) {
+      _player.setLoopMode(LoopMode.all).then((value) {
+        setState(() {
+          _currentPlayMode = 2;
+        });
+      });
+    }
+    if (prevPlayMode == 2) {
+      _player.setLoopMode(LoopMode.off).then((value) {
+        setState(() {
+          _currentPlayMode = 0;
+        });
+      });
     }
   }
 
@@ -162,9 +198,8 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
         Slider(
           value: _position.inSeconds.toDouble(),
           min: 0.0,
-          max: _duration.inSeconds.toDouble(),
+          max: max(_duration.inSeconds.toDouble(), _position.inSeconds.toDouble()),
           onChanged: (double value) {
-            // LoggerHelper.i("onChanged $value");
             _seek(Duration(seconds: value.toInt()));
           },
           onChangeStart: _onDragStart,
@@ -185,58 +220,51 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
 
   Widget _buildPlayModeIcon() {
     // 播放模式 0-列表循环播放 1-单曲循环 2-随机播放
-    switch (_playMode) {
+    switch (_currentPlayMode) {
       case 0:
-        return const Icon(AppIcons.foreverLoop, size: 26);
+        return const Icon(Icons.list, size: 26, color: Colors.white);
       case 1:
-        return const Icon(AppIcons.onceLoop, size: 26);
-      // case 2:
-      //   return const Icon(AppIcons.randomPlay, size: 26);
+        return const Icon(AppIcons.onceLoop, size: 26, color: Colors.white);
+      case 2:
+        return const Icon(AppIcons.randomPlay, size: 26, color: Colors.white);
     }
-    return const Icon(AppIcons.foreverLoop, size: 26);
+    return const Icon(Icons.list, size: 26, color: Colors.white);
   }
 
   Widget _buildPlayControlPanel() {
     return SizedBox(
-      height: 80,
+      height: 100,
       width: double.infinity,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // play mode
-          IconButton(
-            icon: _buildPlayModeIcon(),
-            onPressed: () {
-              setState(() {
-                if (_playMode + 1 > 2) {
-                  _playMode = 0;
-                } else {
-                  _playMode += 1;
-                }
-              });
-            },
-          ),
+          IconButton(icon: _buildPlayModeIcon(), onPressed: () => _setPlayMode(prevPlayMode: _currentPlayMode)),
           // prev music
-          IconButton(icon: const Icon(Icons.skip_previous), color: _currentIdx == 0 ? Colors.grey : null, onPressed: _playPrev),
+          IconButton(icon: const Icon(Icons.skip_previous), color: Colors.white, onPressed: _playPrev),
           // play or pause
-          IconButton(
-            icon: Icon(_isPlaying ? Icons.pause_circle_outline_rounded : Icons.play_circle_fill_rounded, size: 48),
-            onPressed: () {
-              setState(() {
-                if (_isPlaying) {
-                  _pause();
-                } else {
-                  _play();
-                }
-              });
-            },
+          SizedBox(
+            width: 100,
+            height: double.infinity,
+            child: IconButton(
+              icon: Icon(_isPlaying ? Icons.pause_circle_outline_rounded : Icons.play_circle_fill_rounded, color: Colors.white, size: 60),
+              onPressed: () {
+                setState(() {
+                  if (_isPlaying) {
+                    _pause();
+                  } else {
+                    _play();
+                  }
+                });
+              },
+            ),
           ),
           // next music
-          IconButton(icon: const Icon(Icons.skip_next), color: _currentIdx == widget.musicList.length - 1 ? Colors.grey : null, onPressed: _playNext),
+          IconButton(icon: const Icon(Icons.skip_next), color: Colors.white, onPressed: _playNext),
           // play list
           IconButton(
-            icon: const Icon(AppIcons.musicList),
+            icon: const Icon(AppIcons.musicList, color: Colors.white),
             onPressed: () {},
           ),
         ],
@@ -246,6 +274,7 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
 
   @override
   Widget build(BuildContext context) {
+    double w = MediaQuery.of(context).size.width;
     return Scaffold(
       body: GestureDetector(
         onTap: () {
@@ -269,14 +298,57 @@ class _MusicPlayPageState extends State<MusicPlayPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                const SizedBox(height: kToolbarHeight),
                 Text(currentMusic?.musicName ?? "Unkonwn", style: const TextStyle(color: Colors.white, fontSize: 30.0, fontWeight: FontWeight.bold)),
                 Text(currentMusic?.author ?? "Unkonwn Author", style: const TextStyle(color: Colors.white, fontSize: 18.0)),
+                const Spacer(),
+                Container(
+                  width: w / 2,
+                  height: w / 2,
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(w / 2), boxShadow: const [
+                    BoxShadow(color: Colors.white, blurRadius: 30),
+                  ]),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.network(currentMusic!.imageUrl!.isEmpty ? kDefaultUrl : currentMusic!.imageUrl!, fit: BoxFit.fill),
+                ),
+                const Spacer(),
                 const SizedBox(height: 24.0),
                 _buildPlayer(),
+                const SizedBox(height: kToolbarHeight),
               ],
             ),
           ),
-          !_isHideAppbar ? refAppBar(context: context, title: "", backgroundColor: Colors.transparent) : const SizedBox.shrink(),
+          !_isHideAppbar ? refAppBar(context: context, title: "", backColor: Colors.white, backgroundColor: Colors.transparent) : const SizedBox.shrink(),
+          !_isHideAppbar
+              ? Container(
+                  width: double.infinity,
+                  height: 48,
+                  margin: const EdgeInsets.only(top: kToolbarHeight * 3, left: 2 * AppSizes.kPaddingSize, right: 2 * AppSizes.kPaddingSize),
+                  child: Row(children: [
+                    const Icon(Icons.volume_up, color: Colors.white),
+                    Expanded(
+                      child: SliderTheme(
+                        data: const SliderThemeData(activeTrackColor: Colors.white, inactiveTrackColor: Colors.white30, thumbColor: Colors.white),
+                        child: Slider(
+                          value: _startVolume,
+                          onChanged: (v) {
+                            setState(() {
+                              _startVolume = v;
+                            });
+                            _player.setVolume(_startVolume);
+                          },
+                          onChangeEnd: (v) {
+                            setState(() {
+                              _startVolume = v;
+                            });
+                            _player.setVolume(_startVolume);
+                          },
+                        ),
+                      ),
+                    ),
+                  ]),
+                )
+              : const SizedBox.shrink(),
         ]),
       ),
     );

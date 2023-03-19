@@ -8,21 +8,19 @@ AppBar refAppBar({
   required String title,
   Color backgroundColor = AppColors.backgroundColor,
   Color backColor = Colors.black,
+  List<Widget>? actions,
 }) {
   return AppBar(
     backgroundColor: backgroundColor,
     elevation: 0,
     title: Text(title, style: const TextStyle(color: AppColors.titleColor)),
     leading: IconButton(
-      icon: Container(
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(90), color: AppColors.backgroundColor),
-        padding: const EdgeInsets.all(2),
-        child: Center(child: Icon(Icons.arrow_back_ios_new, color: backColor)),
-      ),
+      icon: Center(child: Icon(Icons.arrow_back_ios_new, color: backColor)),
       onPressed: () {
         Navigator.of(context).pop();
       },
     ),
+    actions: actions,
   );
 }
 
